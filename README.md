@@ -3,15 +3,29 @@ This repository has a handful of tools for interacting with the [gRPC](https://g
 
 For more information on what Starlink is, see [starlink.com](https://www.starlink.com/) and/or the [r/Starlink subreddit](https://www.reddit.com/r/Starlink/).
 
+
+
+## Scripts for Experiments
+
+every 5 seconds poll the ping_latency. Every minute aggergate the data
+```
+podman run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools dish_grpc_text.py -t 12 -o 5 -O samples.csv ping_latency alert_detail ping_drop ping_run_length ping_loaded_latency
+```
+
+Every 15 seconds poll the ping_latency. Every hour aggergate the data
+```
+podman run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools dish_grpc_text.py -t 240 -o 15 ping_latency
+```
+
 ## Prerequisites
 
-Most of the scripts here are [Python](https://www.python.org/) scripts. To use them, you will either need Python installed on your system or you can use the Docker image. If you use the Docker image, you can skip the rest of the prerequisites other than making sure the dish IP is reachable and Docker itself. For Linux systems, the python package from your distribution should be fine, as long as it is Python 3, version 3.7 or later.
+Most of the scripts here are [Python](https://www.python.org/) scripts. To use them, you will either need Python installed on your system or you can use the podman image. If you use the podman image, you can skip the rest of the prerequisites other than making sure the dish IP is reachable and podman itself. For Linux systems, the python package from your distribution should be fine, as long as it is Python 3, version 3.7 or later.
 
 All the tools that pull data from the dish expect to be able to reach it at the dish's fixed IP address of 192.168.100.1, as do the Starlink [Android app](https://play.google.com/store/apps/details?id=com.starlink.mobile), [iOS app](https://apps.apple.com/us/app/starlink/id1537177988), and the browser app you can run directly from http://192.168.100.1. When using a router other than the one included with the Starlink installation kit, this usually requires some additional router configuration to make it work. That configuration is beyond the scope of this document, but if the Starlink app doesn't work on your home network, then neither will these scripts. That being said, you do not need the Starlink app installed to make use of these scripts. See [here](https://github.com/starlink-community/knowledge-base/wiki#using-your-own-router) for more detail on this.
 
-Running the scripts within a [Docker](https://www.docker.com/) container requires Docker to be installed. Information about how to install that can be found at https://docs.docker.com/engine/install/. See below for how to pull the starlink-grpc-tools container image.
+Running the scripts within a [podman](https://www.podman.com/) container requires podman to be installed. Information about how to install that can be found at https://docs.podman.com/engine/install/. See below for how to pull the starlink-grpc-tools container image.
 
-### Required Python modules (for non-Docker usage)
+### Required Python modules (for non-podman usage)
 
 The easiest way to get the Python modules used by the scripts is to do the following, which will install latest versions of a superset of the required modules:
 ```shell script
@@ -20,7 +34,7 @@ pip install --upgrade -r requirements.txt
 
 If you really care about the details here or wish to minimize your package requirements, you can find more detail about which specific modules are required for what usage in [this Wiki article](https://github.com/sparky8512/starlink-grpc-tools/wiki/Python-Module-Dependencies).
 
-### Generating the gRPC protocol modules (for non-Docker usage)
+### Generating the gRPC protocol modules (for non-podman usage)
 
 This step is no longer required, nor is it particularly recommended, so the details have been moved to [this Wiki article](https://github.com/sparky8512/starlink-grpc-tools/wiki/gRPC-Protocol-Modules).
 
@@ -151,29 +165,29 @@ Possibly more simple examples to come, as the other scripts have started getting
 
 `extract_protoset.py` can be used in place of `grpcurl` for recording the dish protocol information. See [the related Wiki article](https://github.com/sparky8512/starlink-grpc-tools/wiki/gRPC-Protocol-Modules) for more details.
 
-## Running with Docker
+## Running with podman
 
-The supported docker image for this project is now the one hosted in the [GitHub Packages repository](https://github.com/sparky8512/starlink-grpc-tools/pkgs/container/starlink-grpc-tools). This is a multi-arch image built for `linux/amd64` (x64_64) and `linux/arm64` (aarch64) docker platforms.
+The supported podman image for this project is now the one hosted in the [GitHub Packages repository](https://github.com/sparky8512/starlink-grpc-tools/pkgs/container/starlink-grpc-tools). This is a multi-arch image built for `linux/amd64` (x64_64) and `linux/arm64` (aarch64) podman platforms.
 
 You can get the "latest" image with the following command:
 ```shell script
-docker pull ghcr.io/sparky8512/starlink-grpc-tools
+podman pull ghcr.io/sparky8512/starlink-grpc-tools
 ```
 This will pull the image tagged as "latest". There should also be images for all recent tagged releases of this project, but those tend to be few and far between, so the most recent one may be missing some important changes. See the package repository for a full list of tagged images.
 
 You can run it with the following:
 ```shell script
-docker run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools <script_name>.py <script args...>
+podman run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools <script_name>.py <script args...>
 ```
 For example, the following will print current status info and then exit:
 ```shell script
-docker run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools dish_grpc_text.py -v status alert_detail
+podman run --name=starlink-grpc-tools ghcr.io/sparky8512/starlink-grpc-tools dish_grpc_text.py -v status alert_detail
 ```
-Of course, you can change the name to whatever you want instead, and use other docker run options, as appropriate.
+Of course, you can change the name to whatever you want instead, and use other podman run options, as appropriate.
 
 The default command is `dish_grpc_influx.py status alert_detail`, which is only useful if you have an InfluxDB server running somewhere and pass in environment variables with the appropriate user and database info, such as:
 ```shell script
-docker run --name=starlink-grpc-tools -e INFLUXDB_HOST={InfluxDB Hostname} \
+podman run --name=starlink-grpc-tools -e INFLUXDB_HOST={InfluxDB Hostname} \
     -e INFLUXDB_PORT={Port, 8086 usually} \
     -e INFLUXDB_USER={Optional, InfluxDB Username} \
     -e INFLUXDB_PWD={Optional, InfluxDB Password} \
@@ -183,16 +197,16 @@ docker run --name=starlink-grpc-tools -e INFLUXDB_HOST={InfluxDB Hostname} \
 
 When running in the background, you will probably want to specify a `-t` script option, to run in a loop, otherwise it will exit right away and leave an inactive container. For example:
 ```shell script
-docker run -d -t --name=starlink-grpc-tools -e INFLUXDB_HOST={InfluxDB Hostname} \
+podman run -d -t --name=starlink-grpc-tools -e INFLUXDB_HOST={InfluxDB Hostname} \
     -e INFLUXDB_PORT={Port, 8086 usually} \
     -e INFLUXDB_USER={Optional, InfluxDB Username} \
     -e INFLUXDB_PWD={Optional, InfluxDB Password} \
     -e INFLUXDB_DB={Pre-created DB name, starlinkstats works well} \
     ghcr.io/sparky8512/starlink-grpc-tools -v -t 60 status alert_detail
 ```
-The `-t` option to `docker run` will prevent Python from buffering the script's standard output and can be omitted if you don't care about seeing the verbose output in the container logs as soon as it is printed.
+The `-t` option to `podman run` will prevent Python from buffering the script's standard output and can be omitted if you don't care about seeing the verbose output in the container logs as soon as it is printed.
 
-If there is some problem with accessing the image from the GitHub Packages repository, there is also an image available on Docker Hub, which can be accessed as `neurocis/starlink-grpc-tools`, but note that that image may not be as up to date with changes as the supported one.
+If there is some problem with accessing the image from the GitHub Packages repository, there is also an image available on podman Hub, which can be accessed as `neurocis/starlink-grpc-tools`, but note that that image may not be as up to date with changes as the supported one.
 
 ## Running with SystemD
 
